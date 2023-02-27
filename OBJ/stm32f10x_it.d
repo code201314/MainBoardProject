@@ -10,3 +10,16 @@
 ..\obj\stm32f10x_it.o: ..\STM32F10x_FWLib\inc\stm32f10x_rcc.h
 ..\obj\stm32f10x_it.o: ..\STM32F10x_FWLib\inc\stm32f10x_usart.h
 ..\obj\stm32f10x_it.o: ..\STM32F10x_FWLib\inc\misc.h
+..\obj\stm32f10x_it.o: ..\FreeRTOS\include\FreeRTOS.h
+..\obj\stm32f10x_it.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stddef.h
+..\obj\stm32f10x_it.o: ..\USER\FreeRTOSConfig.h
+..\obj\stm32f10x_it.o: ..\SYSTEM\usart\usart.h
+..\obj\stm32f10x_it.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
+..\obj\stm32f10x_it.o: ..\SYSTEM\sys\sys.h
+..\obj\stm32f10x_it.o: ..\FreeRTOS\include\projdefs.h
+..\obj\stm32f10x_it.o: ..\FreeRTOS\include\portable.h
+..\obj\stm32f10x_it.o: ..\FreeRTOS\include\deprecated_definitions.h
+..\obj\stm32f10x_it.o: ..\FreeRTOS\port\RVDS\ARM_CM3\portmacro.h
+..\obj\stm32f10x_it.o: ..\FreeRTOS\include\mpu_wrappers.h
+..\obj\stm32f10x_it.o: ..\FreeRTOS\include\task.h
+..\obj\stm32f10x_it.o: ..\FreeRTOS\include\list.h

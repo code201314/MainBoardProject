@@ -24,7 +24,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f10x_it.h" 
 
-
+#include "FreeRTOS.h"					//FreeRTOS使用		  
+#include "task.h" 
  
 void NMI_Handler(void)
 {
@@ -63,21 +64,33 @@ void UsageFault_Handler(void)
   }
 }
  
-void SVC_Handler(void)
-{
-}
+//void SVC_Handler(void)
+//{
+//}
  
 void DebugMon_Handler(void)
 {
 }
  
-void PendSV_Handler(void)
-{
-}
+//void PendSV_Handler(void)
+//{
+//}
  
+//由于该函数是在外部，需要声明一下
+extern void xPortSysTickHandler(void);
+
 void SysTick_Handler(void)
 {
+	#if (INCLUDE_xTaskGetSchedulerState  == 1 )
+    if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED)
+    {
+  #endif  /* INCLUDE_xTaskGetSchedulerState */  
+      xPortSysTickHandler();//调用systick中断处理函数
+  #if (INCLUDE_xTaskGetSchedulerState  == 1 )
+    }
+  #endif  /* INCLUDE_xTaskGetSchedulerState */
 }
+
 
 /******************************************************************************/
 /*                 STM32F10x Peripherals Interrupt Handlers                   */

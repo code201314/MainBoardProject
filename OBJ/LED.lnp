@@ -12,6 +12,15 @@
 "..\obj\stm32f10x_rcc.o"
 "..\obj\stm32f10x_usart.o"
 "..\obj\misc.o"
+"..\obj\port.o"
+"..\obj\heap_4.o"
+"..\obj\croutine.o"
+"..\obj\event_groups.o"
+"..\obj\list.o"
+"..\obj\queue.o"
+"..\obj\stream_buffer.o"
+"..\obj\tasks.o"
+"..\obj\timers.o"
 --strict --scatter "..\OBJ\LED.sct"
 --summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
 --info sizes --info totals --info unused --info veneers
