@@ -1,3 +1,14 @@
+/*
+ * @Author: code201314 1162782792@qq.com
+ * @Date: 2023-02-26 23:18:19
+ * @LastEditors: code201314 1162782792@qq.com
+ * @LastEditTime: 2023-03-12 23:53:42
+ * @FilePath: \MainBoardProject\APP\main.c
+ * @Description: 
+ * 
+ * Copyright (c) 2023 by ${git_name_email}, All Rights Reserved. 
+ */
+
 #include "main.h"
 #include "sys.h"
 
@@ -6,6 +17,9 @@
 /* 开发板硬件bsp头文件 */
 #include "led.h"
 #include "usart.h"
+#include "elog.h"
+#include "TinyFrame.h"
+#include <stdlib.h>
 
 /**************************** 任务句柄 ********************************/
 /* 
@@ -19,20 +33,51 @@ static TaskHandle_t AppTaskCreate_Handle = NULL;
 static TaskHandle_t LED1_Task_Handle = NULL;
 //串口通讯任务句柄
 static TaskHandle_t USART_Task_Handle = NULL;
-//AHT20采集一次温湿度数据任务句柄
-static TaskHandle_t AHT20_Task_Handle = NULL;;
-
+//日志打印任务句柄
+static TaskHandle_t LOG_Task_Handle = NULL;
 
 static void AppTaskCreate(void);/* 用于创建任务 */
 /* LED1_Task任务实现 */
 static void LED1_Task(void* pvParameters);
 //串口通信任务实现
 static void USART_Task(void* parameter);
-//AHT20采集一次温湿度数据任务实现
-static void AHT20_Task(void* parameter);
+//日志任务实现
+static void LOG_Task(void* pvParameters);
 
 static void BSP_Init(void);/* 用于初始化板载相关资源 */
 
+
+void dumpFrame(const uint8_t *buff, size_t len)
+{
+    size_t i;
+    for (i = 0; i < len; i++) {
+        printf("%3u \033[94m%02X\033[0m", buff[i], buff[i]);
+        if (buff[i] >= 0x20 && buff[i] < 127) {
+            printf(" %c", buff[i]);
+        }
+        else {
+            printf(" \033[31m.\033[0m");
+        }
+        printf("\n");
+    }
+    printf("--- end of frame ---\n\n");
+}
+
+void dumpFrameInfo(TF_Msg *msg)
+{
+    printf("\033[33mFrame info\n"
+               "  type: %02Xh\n"
+               "  data: \"%.*s\"\n"
+               "   len: %u\n"
+               "    id: %Xh\033[0m\n\n",
+           msg->type, msg->len, msg->data, msg->len, msg->frame_id);
+}
+
+TF_Result myListener(TinyFrame *tf, TF_Msg *msg)
+{
+    dumpFrameInfo(msg);
+    return TF_STAY;
+}
 
 int main(void)
 {	
@@ -40,7 +85,8 @@ int main(void)
 
   /* 开发板硬件初始化 */
   BSP_Init();
-  printf("这是一个[野火]-STM32全系列开发板-FreeRTOS-动态创建多任务实验!\r\n");
+  printf("%s\r\n","This is MainBoard programer running!!!");
+	printf("Currunt Date:%s Time:%s\r\n",__DATE__,__TIME__);
    /* 创建AppTaskCreate任务 */
   xReturn = xTaskCreate((TaskFunction_t )AppTaskCreate,  /* 任务入口函数 */
                         (const char*    )"AppTaskCreate",/* 任务名字 */
@@ -82,15 +128,15 @@ static void AppTaskCreate(void)
                         (TaskHandle_t*  )&USART_Task_Handle);
   if(pdPASS == xReturn)
     printf("创建USART_Task任务成功!\r\n");
-	//AHT20采集一次温湿度数据
-	xReturn = xTaskCreate((TaskFunction_t )AHT20_Task,
-                        (const char*    )"AHT20_Task",
+	  //创建LOG打印任务
+  xReturn = xTaskCreate((TaskFunction_t )LOG_Task,
+                        (const char*    )"LOG_Task",
                         (uint16_t       )512,
                         (void*          )NULL,	
-                        (UBaseType_t    )4,	 
-                        (TaskHandle_t*  )&AHT20_Task_Handle);
+                        (UBaseType_t    )3,	 
+                        (TaskHandle_t*  )&LOG_Task_Handle);
   if(pdPASS == xReturn)
-		printf("创建AHT20_Task任务成功!\r\n");
+    printf("创建LOG_Task任务成功!\r\n");
   
   vTaskDelete(AppTaskCreate_Handle); //删除AppTaskCreate任务
   
@@ -103,12 +149,9 @@ static void LED1_Task(void* parameter)
     while (1)
     {
         LED0 = 0;
-        vTaskDelay(200);   /* 延时500个tick */
-        printf("LED1_Task Running,LED1_ON\r\n");
-        
+        vTaskDelay(500);   /* 延时500个tick */
         LED0 = 1;     
-        vTaskDelay(200);   /* 延时500个tick */		 		
-        printf("LED1_Task Running,LED1_OFF\r\n");
+        vTaskDelay(500);   /* 延时500个tick */		 		
     }
 }
 
@@ -116,20 +159,21 @@ static void LED1_Task(void* parameter)
 //串口通信
 static void USART_Task(void* parameter)
 {
-	while (1)
-	{
-		vTaskDelay(2000);
-		printf("helloworld!\r\n");
-	}
+    while (1)
+    {
+        vTaskDelay(2000);
+    }
 }
 
-//AHT20采集一次温湿度数据
-static void AHT20_Task(void* parameter)
+static void LOG_Task(void* pvParameters)
 {
-	while (1)
+  static uint8_t buff[]="usart test\r\n";
+  while (1)
 	{
-		vTaskDelay(5000);
-		printf("采集的温度为10℃\r\n");
+		log_e("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+		usart_write(USART1, buff, sizeof(buff));
+
+		vTaskDelay(1000);
 	}
 }
 
@@ -147,6 +191,16 @@ static void BSP_Init(void)
 
 	/* 串口初始化	*/
 	uart_init(115200);
-  
+
+  elog_init();
+  /* set EasyLogger log format */
+  elog_set_fmt(ELOG_LVL_ASSERT, ELOG_FMT_ALL);
+  elog_set_fmt(ELOG_LVL_ERROR, ELOG_FMT_LVL | ELOG_FMT_TAG | ELOG_FMT_TIME);
+  elog_set_fmt(ELOG_LVL_WARN, ELOG_FMT_LVL | ELOG_FMT_TAG | ELOG_FMT_TIME);
+  elog_set_fmt(ELOG_LVL_INFO, ELOG_FMT_LVL | ELOG_FMT_TAG | ELOG_FMT_TIME);
+  elog_set_fmt(ELOG_LVL_DEBUG, ELOG_FMT_ALL & ~(ELOG_FMT_FUNC | ELOG_FMT_T_INFO | ELOG_FMT_P_INFO));
+  elog_set_fmt(ELOG_LVL_VERBOSE, ELOG_FMT_ALL & ~(ELOG_FMT_FUNC | ELOG_FMT_T_INFO | ELOG_FMT_P_INFO));
+  /* start EasyLogger */
+  elog_start();
 }
 
